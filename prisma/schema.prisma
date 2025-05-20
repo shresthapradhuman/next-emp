@@ -1,12 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "./generated/prisma"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -14,12 +8,105 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  contact       String?
+  bio           String?   @db.Text()
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts Account[]
+  events   Event[]
+  Order    Order[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text()
+  access_token      String? @db.Text()
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text()
+  session_state     String?
+  userId            String  @map("user_id")
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
 model Category {
-  id    Int     @id @default(autoincrement())
-  title String
-  slug  String?
-  image String
-  order String
+  id     String  @id @default(cuid())
+  name   String
+  slug   String  @unique
+  order  Int     @unique
+  image  String?
+  events Event[]
 
   @@map("categories")
+}
+
+model Event {
+  id          String      @id @default(cuid())
+  title       String      @db.VarChar(255)
+  description String      @db.Text()
+  status      EventStatus @default(Draft)
+  date        DateTime
+  startTime   String      @db.VarChar(5)
+  endTime     String      @db.VarChar(5)
+  venue       String      @db.VarChar(255)
+  capacity    String?
+  price       String
+  image       String      @db.Text()
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  category    Category?   @relation(fields: [categoryId], references: [id])
+  categoryId  String?
+  organizer   User?       @relation(fields: [organizerId], references: [id])
+  organizerId String?
+  Order       Order[]
+
+  @@map("events")
+}
+
+model Order {
+  id          String @id @default(cuid())
+  stripeId    String @unique
+  totalAmount String
+  event       Event  @relation(fields: [eventId], references: [id])
+  eventId     String
+  buyer       User   @relation(fields: [buyerId], references: [id])
+  buyerId     String
+
+  @@map("orders")
+}
+
+enum EventStatus {
+  Draft
+  Published
+  Cancelled
 }
