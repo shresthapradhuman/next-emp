@@ -42,7 +42,7 @@ const HeroSection = () => {
           {/* image section */}
           <div className="relative w-full">
             <Image
-              src="/hero.svg?height=600&width=600"
+              src="/hero-new.svg?height=600&width=600"
               alt="Event management showcase"
               width={600}
               height={600}
